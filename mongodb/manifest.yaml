@@ -1,0 +1,70 @@
+# service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: robomart
+spec:
+  selector:
+    project: robomart
+    component: mongodb
+    tier: db
+  ports:
+  - protocol: TCP
+    port: 27017 #service port
+    targetPort: 27017 #contaier port
+--- 
+#headless service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-hl
+  namespace: robomart
+spec:
+  clusterIP: None
+  selector:
+    project: robomart
+    component: mongodb
+    tier: db
+  ports:
+  - protocol: TCP
+    port: 27017 #service port
+    targetPort: 27017 #contaier port
+---
+#statefulset
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: robomart
+spec:
+  selector:
+    matchLabels:
+      project: robomart
+      component: mongodb
+      tier: db
+  serviceName: mongodb-hl
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        project: robomart
+        component: mongodb
+        tier: db
+    spec:
+      containers:
+      - name: mongodb
+        image: azharmd/mongodb:v1
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: mongodb
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "robomart-ebs"
+      resources:
+        requests:
+          storage: 1Gi
