@@ -1,0 +1,68 @@
+#service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis 
+  namespace: robomart
+spec:
+  selector:
+    project: robomart
+    component: redis
+    tier: db
+  ports:
+  - protocol: TCP
+    port: 6379 #service port
+    targetPort: 6379 #container port
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-hl
+  namespace: robomart
+spec:
+  clusterIP: None
+  selector:
+    project: robomart
+    component: redis
+    tier: db
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+---
+#statefulset
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis 
+  namespace: robomart
+spec:
+  selector:
+    matchLabels:
+      project: robomart
+      component: redis
+      tier: db
+  serviceName: redis-hl
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        project: robomart
+        component: redis
+        tier: db
+    spec:
+      containers:
+      - name: redis
+        image: azharmd/redis:v1
+        volumeMounts:
+        - name: redis
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: robomart-ebs
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "robomart-ebs"
+      resources:
+        requests:
+          storage: 1Gi
