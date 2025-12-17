@@ -1,0 +1,117 @@
+#configmap to store env variables
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment
+  namespace: robomart
+data:
+  CART_HOST: "cart"
+  CART_PORT: "8080"
+  USER_HOST: "user"
+  USER_PORT: "8080"
+  AMQP_HOST: "rabbitmq"
+  # AMQP_USER: "roboshop"
+  # AMQP_PASS: "roboshop123"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-secret
+  namespace: robomart
+type: Opaque
+stringData:
+  AMQP_USER: roboshop
+  AMQP_PASS: roboshop123
+---
+#deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment
+  namespace: robomart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      project: robomart
+      component: payment
+      tier: backend
+  template:
+    metadata:
+      labels:
+        project: robomart
+        component: payment
+        tier: backend
+    spec:
+      containers:
+      - name: payment
+        image: azharmd/payment:v1
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: payment
+        - secretRef:
+            name: rabbitmq-secret
+        ports:
+        - name: liveness-port
+          containerPort: 8080
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: liveness-port
+          failureThreshold: 1
+          periodSeconds: 15
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: liveness-port
+          failureThreshold: 1
+          periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment
+  namespace: robomart
+spec:
+  selector:
+    project: robomart
+    component: payment
+    tier: backend
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+---
+#HPA
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: payment
+  namespace: robomart
+  labels:
+    project: robomart
+    component: payment
+    tier: backend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: payment
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+
