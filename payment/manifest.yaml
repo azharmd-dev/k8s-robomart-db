@@ -45,7 +45,7 @@ spec:
     spec:
       containers:
       - name: payment
-        image: azharmd/payment:v1
+        image: joindevops/payment:v1
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
