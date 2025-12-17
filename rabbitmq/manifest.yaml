@@ -1,0 +1,95 @@
+#service
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: robomart
+spec:
+  selector:
+    project: robomart
+    component: rabbitmq
+    tier: db
+  ports:
+  - protocol: TCP
+    port: 5672
+    targetPort: 5672
+
+---
+#secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-secret
+  namespace: robomart
+type: Opaque
+data:
+  username: "cm9ib3Nob3AK"
+  password: "cm9ib3Nob3AxMjMK"
+---
+
+#headless service
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-hl
+  namespace: robomart
+spec:
+  clusterIP: None
+  selector:
+    project: robomart
+    component: rabbitmq 
+    tier: db
+  ports:
+  - protocol: TCP
+    port: 5672
+    targetPort: 5672
+---
+#statefulset
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  namespace: robomart
+spec:
+  selector:
+    matchLabels:
+      project: robomart
+      component: rabbitmq
+      tier: db
+  serviceName: rabbitmq-hl
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        project: robomart
+        component: rabbitmq
+        tier: db
+    spec:
+      containers:
+      - name: rabbitmq
+        image: azharmd/rabbitmq:v1
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: rabbitmq
+          mountPath: /var/lib/rabbitmq
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: username
+
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: password
+  volumeClaimTemplates:
+  - metadata:
+      name: rabbitmq
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "robomart-ebs"
+      resources:
+        requests:
+          storage: 1Gi
