@@ -15,17 +15,16 @@ spec:
     targetPort: 5672
 
 ---
-#secrets
-apiVersion: v1
-kind: Secret
-metadata:
-  name: rabbitmq-secret
-  namespace: robomart
-type: Opaque
-data:
-  username: cm9ib3Nob3A=
-  password: cm9ib3Nob3AxMjM=
----
+# #secrets
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: rabbitmq-secret
+#   namespace: robomart
+# type: Opaque
+# data:
+#   username: cm9ib3Nob3A=
+#   password: cm9ib3Nob3AxMjM=
 
 #headless service
 apiVersion: v1
@@ -74,16 +73,20 @@ spec:
           mountPath: /var/lib/rabbitmq
         env:
         - name: RABBITMQ_DEFAULT_USER
-          valueFrom:
-            secretKeyRef:
-              name: rabbitmq-secret
-              key: username
-
+          value: roboshop
         - name: RABBITMQ_DEFAULT_PASS
-          valueFrom:
-            secretKeyRef:
-              name: rabbitmq-secret
-              key: password
+          value: roboshop123
+        # - name: RABBITMQ_DEFAULT_USER
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: rabbitmq-secret
+        #       key: username
+
+        # - name: RABBITMQ_DEFAULT_PASS
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: rabbitmq-secret
+        #       key: password
   volumeClaimTemplates:
   - metadata:
       name: rabbitmq
