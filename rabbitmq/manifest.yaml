@@ -23,8 +23,8 @@ metadata:
   namespace: robomart
 type: Opaque
 data:
-  username: "cm9ib3Nob3AK"
-  password: "cm9ib3Nob3AxMjMK"
+  username: cm9ib3Nob3A=
+  password: cm9ib3Nob3AxMjM=
 ---
 
 #headless service
